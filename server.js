@@ -1,45 +1,62 @@
 const express = require('express');
+const { google } = require('googleapis');
+const dotenv = require('dotenv');
 const twilio = require('twilio');
+
+dotenv.config();
 const app = express();
-
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-// STEP 1: Handle incoming call
-app.post('/call', (req, res) => {
-  const twiml = new twilio.twiml.VoiceResponse();
+// GOOGLE SHEETS SETUP
+const auth = new google.auth.GoogleAuth({
+  keyFile: './n8nalphaspace-470d577db8bc.json',
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
+const sheets = google.sheets({ version: 'v4', auth });
 
-  const gather = twiml.gather({
-    input: 'speech',
-    timeout: 5,
-    speechTimeout: 'auto',
-    action: '/gather-email',
-    method: 'POST'
+const SPREADSHEET_ID = '1bLHBCmQYb0mvIA1ROnUJEmqH4n5-mym7VeJjoFMo4'; // replace if needed
+const SHEET_NAME = 'Recovered_Sheet1';
+
+// STEP 1 - GET FIRST PHONE NUMBER
+async function getFirstPhoneNumber() {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${SHEET_NAME}!C2:C`, // Phone Number column
   });
 
-  gather.say('Hi! This is AlphaSpace AI. Please say your email address clearly after the beep.');
-
-  res.type('text/xml');
-  res.send(twiml.toString());
-});
-
-// STEP 2: Capture the email and read it back
-app.post('/gather-email', (req, res) => {
-  const twiml = new twilio.twiml.VoiceResponse();
-  const speechResult = req.body.SpeechResult;
-
-  if (speechResult) {
-    console.log(`Captured email: ${speechResult}`);
-    twiml.say(`Thanks. We heard: ${speechResult}. Goodbye!`);
-  } else {
-    twiml.say('Sorry, we didn’t catch that. Please try again later.');
+  const rows = res.data.values;
+  if (!rows || rows.length === 0) {
+    throw new Error('No phone numbers found.');
   }
 
-  res.type('text/xml');
-  res.send(twiml.toString());
+  // Return first non-empty phone number
+  const phone = rows.find(r => r[0]);
+  return phone ? phone[0] : null;
+}
+
+// STEP 2 - OUTBOUND CALL ENDPOINT
+app.get('/call', async (req, res) => {
+  try {
+    const phoneNumber = await getFirstPhoneNumber();
+
+    if (!phoneNumber) {
+      return res.status(400).send('No phone number available');
+    }
+
+    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+    const call = await client.calls.create({
+      twiml: `<Response><Say>Hello! This is AlphaSpace AI. Can I get your email address, please?</Say></Response>`,
+      to: phoneNumber,
+      from: process.env.TWILIO_PHONE_NUMBER,
+    });
+
+    res.send(`Calling ${phoneNumber}... SID: ${call.sid}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error making call');
+  }
 });
 
-// STEP 3: Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
