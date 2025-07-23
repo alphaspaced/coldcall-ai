@@ -1,25 +1,17 @@
 const express = require('express');
-const axios = require('axios');
-const dotenv = require('dotenv');
-const { WebSocketServer } = require('ws');
-
-dotenv.config();
-
+const twilio = require('twilio');
 const app = express();
+
+app.use(express.urlencoded({ extended: false }));
+
+app.post('/call', (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+  twiml.say('Hello! This is AlphaSpace AI. Can I get your email address, please?');
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
 const port = process.env.PORT || 3000;
-
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.send('Cold Call AI is live!');
-});
-
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${port}`);
-});
-
-// WebSocket example (extend as needed)
-const wss = new WebSocketServer({ server });
-wss.on('connection', (ws) => {
-  ws.send('📞 WebSocket connected');
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
