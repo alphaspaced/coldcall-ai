@@ -8,122 +8,66 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// GOOGLE SHEETS SETUP
+// Google Sheets setup
 const auth = new google.auth.GoogleAuth({
   keyFile: './n8nalphaspace-470d577db8bc.json',
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 const sheets = google.sheets({ version: 'v4', auth });
 
-const SPREADSHEET_ID = '1bLHBCmQYb0mvIA1ROnUJEmqH4n5-mym7VeJjoFMo4';
+const SPREADSHEET_ID = '1bLHBcmQYb0mvIA1RONuJEmqH4n5-mym7VeJjoFMo4';
 const SHEET_NAME = 'Recovered_Sheet1';
 
-// STEP 1 - GET FIRST PHONE NUMBER
+// 🔹 STEP 1 - Get first phone number
 async function getFirstPhoneNumber() {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range: `${SHEET_NAME}!C2:C`,
   });
 
-  const rows = res.data.values;
-  if (!rows || rows.length === 0) {
-    throw new Error('No phone numbers found.');
-  }
+  const values = res.data.values || [];
+  const rowIndex = values.findIndex(row => row[0]);
 
-  const phone = rows.find(r => r[0]);
-  return phone ? phone[0] : null;
+  if (rowIndex === -1) throw new Error('No phone numbers found.');
+  return {
+    phone: values[rowIndex][0],
+    row: rowIndex + 2, // +2 because C2 = row 2
+  };
 }
 
-// STEP 2 - TWILIO WEBHOOK (INBOUND POST from Twilio)
-app.post('/call', async (req, res) => {
+// 🔹 STEP 2 - Handle Twilio POST callback (asks for email)
+app.post('/call', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
-
-  const gather = twiml.gather({
-    input: 'speech',
+  twiml.say('Hi! This is AlphaSpace. What’s the best email to reach you at? Please say it clearly after the beep.');
+  twiml.record({
     action: '/gather',
-    method: 'POST',
+    transcribe: true,
+    transcribeCallback: '/gather',
+    maxLength: 10,
     timeout: 5,
-    speechTimeout: 'auto'
   });
-
-  gather.say('Hi! This is AlphaSpace. What’s the best email to reach you at? Please say it clearly after the beep.');
-
   res.type('text/xml');
   res.send(twiml.toString());
 });
 
-app.get('/next', async (req, res) => {
-  try {
-    const rows = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!C2:C`, // Column C = Phone Number
-    });
-
-    const values = rows.data.values || [];
-    const rowIndex = values.findIndex((row) => row[0]);
-
-    if (rowIndex === -1) return res.send('No phone numbers found.');
-
-    const phone = values[rowIndex][0];
-    const from = process.env.TWILIO_PHONE_NUMBER;
-
-    await client.calls.create({
-      url: 'https://coldcall-ai.onrender.com/call',
-      to: phone,
-      from,
-    });
-
-    } catch (err) {
-    console.error('Failed to trigger call:', err);
-    res.status(500).send(`Error placing call: ${err.message}`);
-  }
-
-    res.status(500).send('Error placing call');
-  }
-});
-
-
-// STEP 3 - OUTBOUND CALL TRIGGER
-app.get('/trigger', async (req, res) => {
-  try {
-    const phoneNumber = await getFirstPhoneNumber();
-    if (!phoneNumber) {
-      return res.status(400).send('No phone number available');
-    }
-
-    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-    const call = await client.calls.create({
-      url: 'https://coldcall-ai.onrender.com/call', // must be POST-compatible TwiML route
-      to: phoneNumber,
-      from: process.env.TWILIO_PHONE_NUMBER,
-    });
-
-    res.send(`Calling ${phoneNumber}... SID: ${call.sid}`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error making call');
-  }
-});
-
-const PORT = process.env.PORT || 3000;
+// 🔹 STEP 3 - Capture spoken email and save to Google Sheets
 app.post('/gather', async (req, res) => {
-  const speech = req.body.SpeechResult;
-
+  const speech = req.body.SpeechResult || req.body.TranscriptionText;
   if (!speech) {
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say('Sorry, I didn’t catch that. Goodbye!');
+    twiml.say("Sorry, I didn't catch that. Goodbye.");
     res.type('text/xml');
     return res.send(twiml.toString());
   }
 
-  // Find the first empty row in column F (email)
+  // Find first empty email cell (column F)
   const rows = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range: `${SHEET_NAME}!F2:F`,
   });
 
   const values = rows.data.values || [];
-const rowIndex = values.findIndex(row => !row[0]) + 2;
+  const rowIndex = values.findIndex(row => !row[0]) + 2;
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
@@ -135,9 +79,33 @@ const rowIndex = values.findIndex(row => !row[0]) + 2;
   });
 
   const twiml = new twilio.twiml.VoiceResponse();
-  twiml.say('Thanks! Got it. We’ll be in touch. Goodbye!');
+  twiml.say("Thanks! Got it. We’ll be in touch. Goodbye!");
   res.type('text/xml');
   res.send(twiml.toString());
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// 🔹 STEP 4 - Manually test call trigger from browser
+app.get('/next', async (req, res) => {
+  try {
+    const { phone } = await getFirstPhoneNumber();
+    const from = process.env.TWILIO_PHONE_NUMBER;
+
+    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+    await client.calls.create({
+      url: 'https://coldcall-ai.onrender.com/call',
+      to: phone,
+      from,
+    });
+
+    res.send(`📞 Calling ${phone}`);
+  } catch (err) {
+    console.error('Failed to trigger call:', err);
+    res.status(500).send(`Error placing call: ${err.message}`);
+  }
+});
+
+// 🔹 Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
