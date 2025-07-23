@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "n8nalphaspace",
+  "private_key_id": "68e3214b231eca7ddcbfd659b91b72d4abf0acd0",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGmjV63GcP61vX\n5w0xYTgHdQsyvVu7VLbDP7YYQ10VcLCU+TJnn2q7IG6jcwQIa/ahGe9V1yY58J2n\nnSul2FHrfVUV3rXqwOjn5uLbtBvWlE/zpw0vQoGYQHEeqO3DWRbkY1EMyBGmSHNS\noZ2+UVAwcTL8yo3AAfX9l4ofufANAIliFldaTkjLlsKieZnsabF0gV6YF7BaiG7r\no4AixsoccA6b+Gd1bdW5Qb/so1pZlaOFHl7WsfJOKM/iddAtAY/ru/k92y2cNrUH\ngHPURfRO4bC1NaHNXGNzqaDNNs4gVTpFroy93F9NT1mrsgOvxv0hKAxnHtXA3m1Z\nXo8HHs4/AgMBAAECggEACDdD7se5ucEI+ncJUYQjPxJlUAg2XcW6OSc5v2o1/8I6\n2TGFQh/TA1fAS/cLm9TqOILr/EHwx7p/rc9E3tECno/U78PYBGn47fMGv9kFF8zo\nkSdVgSGACU431RwJmKhnAoll8SCWXlR79NdRFm5Nt3CkuoF0o2n8BQLPs31L2XXG\nns8TzzdAuoXtgUs1IQVRORJsUdEGFzzjrKaM1YIpFSsTdMOVsmEWeBSMESS56MQv\njcvobq6I+3kY6ths6nJMpWw3zjyBLirPi6X6i9Hd6Zas69PdoxAwTDZ3UnjswHiD\nPp+vmvMRGs9CzUd5a0c4TQKYKODDknAdnSYt22lMJQKBgQD7yTdeqJKYU9pTLIew\n1XaVCpL+vki+6P+z87cbiRTeHJOkIH4U0kEenjIRiy5NUmeiUeJxPhyt5Eoow1d2\nIB+UuibaWYUPA6yBNR+GaqrrCxuozK6Y+abT7QK3J5UPbiGaMOw29thIcdkYc/C9\n7uE8VeA2RNAnm7eYPHfCEu11EwKBgQDJ7SBBMz71x9MYNR5MFnN9QaExWw78v+yD\nfYtHbvfx0p3lM6oO2BqltzzNVXgZVduOyoFjFTXiGfKiR6Q0e0ag903XGjEg+MJR\nTUD6VhFoFjCWeRRoH6CIbAfqJALa2Cquj/U5T7nh5ZwHmXVCCAh2WaqmtENWnEgc\ntW6dFoRjpQKBgBoDcQALpJGuYCkluaMwer7tR8CgAj4PLpP2Ax4KLKjCBRL49G3M\nR0QVjhC384GzmNdxZFbU1vu0UWEixX+D1B92mBsJErE5bPIwfeBSVvRPwnzPIN7X\nNEBDBXvM0B62/yvCEDWhjTj24jofiGjnLEgiizawJ11gPjixTqIzeGsXAoGBAJN2\n9ehHuYIa5YG3QSIF/1+JL2PxARf6PYqlg7KuSqqyypbZTSc8EPHWyLOX6HZwKkC0\niRtIISq3EmgK89NT9/eTw6gEO769jIN9bKeldV7TXbZ2RD3qYv1eD8WheOhDl6AW\nB9tL6w8a9QDjxCtt3Gg6AZNu8AJvbYZxxY85I4P1AoGAOKaisNrdeswy5mRld38d\nENGrUdR87kMYHIJh8h8bCF4QzvJmof26IcBrXMNL6PJarQNRW5QaWLmx/Hf2d4Yo\nVK37t/Vi5l/V0OH45sojOy6GrT9H+ybfbEwUE7bFOucL31/7ZFU0u61vYQAwPylo\nhARGaLNna+Bp1Azn6SJsrV0=\n-----END PRIVATE KEY-----\n",
+  "client_email": "coldcall-sheet-access@n8nalphaspace.iam.gserviceaccount.com",
+  "client_id": "100641834639502643799",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/coldcall-sheet-access%40n8nalphaspace.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
