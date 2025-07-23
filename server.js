@@ -73,9 +73,11 @@ app.get('/next', async (req, res) => {
       from,
     });
 
-    res.send(`📞 Calling ${phone}`);
-  } catch (err) {
-    console.error('Failed to trigger call:', err.message);
+    } catch (err) {
+    console.error('Failed to trigger call:', err);
+    res.status(500).send(`Error placing call: ${err.message}`);
+  }
+
     res.status(500).send('Error placing call');
   }
 });
