@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 // ---------------- GOOGLE SHEETS ----------------
 const auth = new google.auth.GoogleAuth({
-  credentials: require('./n8nalphaspace-68e3214b231e.json'), // File must exist in root
+  credentials: require('./service-account.json'), // File must exist in root
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
