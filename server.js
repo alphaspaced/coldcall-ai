@@ -15,14 +15,14 @@ const auth = new google.auth.GoogleAuth({
 });
 const sheets = google.sheets({ version: 'v4', auth });
 
-const SPREADSHEET_ID = '1bLHBCmQYb0mvIA1ROnUJEmqH4n5-mym7VeJjoFMo4'; // replace if needed
+const SPREADSHEET_ID = '1bLHBCmQYb0mvIA1ROnUJEmqH4n5-mym7VeJjoFMo4';
 const SHEET_NAME = 'Recovered_Sheet1';
 
 // STEP 1 - GET FIRST PHONE NUMBER
 async function getFirstPhoneNumber() {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${SHEET_NAME}!C2:C`, // Phone Number column
+    range: `${SHEET_NAME}!C2:C`,
   });
 
   const rows = res.data.values;
@@ -30,23 +30,29 @@ async function getFirstPhoneNumber() {
     throw new Error('No phone numbers found.');
   }
 
-  // Return first non-empty phone number
   const phone = rows.find(r => r[0]);
   return phone ? phone[0] : null;
 }
 
-// STEP 2 - OUTBOUND CALL ENDPOINT
-app.get('/call', async (req, res) => {
+// STEP 2 - TWILIO WEBHOOK (INBOUND POST from Twilio)
+app.post('/call', async (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+  twiml.say('Hello! This is AlphaSpace AI. Can I get your email address, please?');
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+// STEP 3 - OUTBOUND CALL TRIGGER
+app.get('/trigger', async (req, res) => {
   try {
     const phoneNumber = await getFirstPhoneNumber();
-
     if (!phoneNumber) {
       return res.status(400).send('No phone number available');
     }
 
     const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
     const call = await client.calls.create({
-      twiml: `<Response><Say>Hello! This is AlphaSpace AI. Can I get your email address, please?</Say></Response>`,
+      url: 'https://coldcall-ai.onrender.com/call', // must be POST-compatible TwiML route
       to: phoneNumber,
       from: process.env.TWILIO_PHONE_NUMBER,
     });
