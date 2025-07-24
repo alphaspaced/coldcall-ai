@@ -73,31 +73,33 @@ app.get("/eleven-voice-test", async (req, res) => {
 //        ROUTES
 //-----------------------------------
 
-// Inbound testing route
-app.post("/test", (req, res) => {
+// Inbound test with ElevenLabs voice
+app.post("/test-eleven", (req, res) => {
   const twiml = new VoiceResponse();
-  const gather = twiml.gather({ input: "speech", action: "/next", method: "POST" });
 
-  gather.say(
-    "Hey! This is AlphaSpace, Edmonton and Vancouver’s go-to for real estate photos, videos, and 3D tours. What's the best email to reach you at? Just say it clearly after the beep."
-  );
+  twiml.play({}, "https://coldcall-ai.onrender.com/eleven-voice-test");
+
+  const gather = twiml.gather({ input: "speech", action: "/next", method: "POST" });
+  gather.pause({ length: 1 });
 
   res.type("text/xml");
   res.send(twiml.toString());
 });
+
 
 // Outbound production route
 app.post("/call", (req, res) => {
   const twiml = new VoiceResponse();
-  const gather = twiml.gather({ input: "speech", action: "/next", method: "POST" });
+  
+  twiml.play({}, "https://coldcall-ai.onrender.com/eleven-voice-test");
 
-  gather.say(
-    "Hi there! This is AlphaSpace calling — we help realtors like you win listings with stunning media, fast turnaround, and same-day delivery options. May I ask, what's the best email to reach you at?"
-  );
+  const gather = twiml.gather({ input: "speech", action: "/next", method: "POST" });
+  gather.pause({ length: 1 }); // short pause before capturing speech
 
   res.type("text/xml");
   res.send(twiml.toString());
 });
+
 
 // Speech-to-text handler placeholder
 app.post("/next", (req, res) => {
