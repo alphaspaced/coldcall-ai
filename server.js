@@ -101,32 +101,54 @@ app.post("/call", (req, res) => {
 });
 
 
-// Speech-to-text handler
 app.post("/next", async (req, res) => {
   const recording = req.body.SpeechResult;
+  const callerNumber = req.body.From;
   console.log("Captured speech:", recording);
+  console.log("Caller number:", callerNumber);
 
-  // Try extracting an email address from the speech
-  const emailMatch = recording.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  const email = emailMatch ? emailMatch[0] : "Unrecognized";
-
-  // Save to Google Sheet
   try {
-    await sheets.spreadsheets.values.append({
+    const sheetData = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1`,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [[new Date().toISOString(), email, recording]],
-      },
+      range: `${SHEET_NAME}!A2:Z`,
     });
-    console.log("Saved to sheet:", email);
-  } catch (error) {
-    console.error("Failed to save to Google Sheets:", error);
+
+    const rows = sheetData.data.values;
+    if (!rows || rows.length === 0) throw new Error("No rows found");
+
+    let updated = false;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const sheetPhone = row[2]?.replace(/\D/g, ""); // Strip formatting
+      const callPhone = callerNumber.replace(/\D/g, "");
+
+      if (sheetPhone && callPhone.endsWith(sheetPhone)) {
+        const rowIndex = i + 2; // Google Sheets is 1-indexed
+        const emailCol = "F"; // Column F = Email
+
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEET_NAME}!${emailCol}${rowIndex}`,
+          valueInputOption: "RAW",
+          requestBody: {
+            values: [[recording]],
+          },
+        });
+
+        console.log(`✅ Updated email in row ${rowIndex}`);
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) console.warn("⚠️ No matching phone found.");
+  } catch (err) {
+    console.error("❌ Failed to update Google Sheets:", err);
   }
 
   const twiml = new VoiceResponse();
-  twiml.say("Thanks! Got it. We'll follow up shortly. Have a great day from AlphaSpace.");
+  twiml.say("Thanks! We'll be in touch shortly. Have an amazing day from AlphaSpace.");
   res.type("text/xml");
   res.send(twiml.toString());
 });
