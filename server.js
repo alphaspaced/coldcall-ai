@@ -5,12 +5,9 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const { google } = require("googleapis");
-const fs = require("fs");
 const twilio = require("twilio");
 const VoiceResponse = twilio.twiml.VoiceResponse;
 const axios = require("axios");
-const path = require("path");
-
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -35,53 +32,42 @@ const SHEET_NAME = process.env.SHEET_NAME;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
-async function generateSpeechFromElevenLabs(text) {
+//-----------------------------------
+//        ELEVENLABS DEMO ROUTE
+//-----------------------------------
+
+app.get("/eleven-voice-test", async (req, res) => {
+  const demoText = "Hey! This is AlphaSpace, Edmonton and Vancouver's go-to for real estate media. Let's chat soon!";
   const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
   const API_KEY = process.env.ELEVENLABS_API_KEY;
 
-  const outputPath = path.join(__dirname, "speech.mp3");
-
-  const response = await axios({
-    method: "POST",
-    url: `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-    headers: {
-      "xi-api-key": API_KEY,
-      "Content-Type": "application/json",
-      Accept: "audio/mpeg",
-    },
-    data: {
-      text: text,
-      model_id: "eleven_monolingual_v1",
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75,
-      },
-    },
-    responseType: "stream",
-  });
-
-  const writer = fs.createWriteStream(outputPath);
-  response.data.pipe(writer);
-
-  await new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
-
-  return outputPath;
-}
-
-app.get("/eleven-voice-test", async (req, res) => {
-  const demoText = "Hey! This is AlphaSpace, Edmonton and Vancouver’s go-to for real estate media. Let's chat soon!";
   try {
-    const audioPath = await generateSpeechFromElevenLabs(demoText);
-    res.sendFile(audioPath);
+    const response = await axios({
+      method: "POST",
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      headers: {
+        "xi-api-key": API_KEY,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      data: {
+        text: demoText,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+        },
+      },
+      responseType: "stream",
+    });
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    response.data.pipe(res);
   } catch (err) {
-    console.error("Error generating voice:", err);
+    console.error("Voice generation failed:", err.response?.data || err.message);
     res.status(500).send("Voice generation failed.");
   }
 });
-
 
 //-----------------------------------
 //        ROUTES
