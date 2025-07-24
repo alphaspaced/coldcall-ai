@@ -101,15 +101,32 @@ app.post("/call", (req, res) => {
 });
 
 
-// Speech-to-text handler placeholder
-app.post("/next", (req, res) => {
+// Speech-to-text handler
+app.post("/next", async (req, res) => {
   const recording = req.body.SpeechResult;
   console.log("Captured speech:", recording);
 
-  // TO DO: validate + store in Google Sheets
+  // Try extracting an email address from the speech
+  const emailMatch = recording.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const email = emailMatch ? emailMatch[0] : "Unrecognized";
+
+  // Save to Google Sheet
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A1`,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[new Date().toISOString(), email, recording]],
+      },
+    });
+    console.log("Saved to sheet:", email);
+  } catch (error) {
+    console.error("Failed to save to Google Sheets:", error);
+  }
 
   const twiml = new VoiceResponse();
-  twiml.say("Thanks! We'll be in touch shortly. Have an amazing day from AlphaSpace.");
+  twiml.say("Thanks! Got it. We'll follow up shortly. Have a great day from AlphaSpace.");
   res.type("text/xml");
   res.send(twiml.toString());
 });
